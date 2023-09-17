@@ -1,16 +1,12 @@
-import {Container, Graphics, Sprite, Texture} from "pixi.js"
-import {EventEmitter} from "events"
-import type {ContextManager} from "@/models/ContextManager"
-import type {UnwrapNestedRefs} from "vue"
 import {generateUniqueId} from "@/utils/util"
+import {Container, Graphics, Sprite, Texture} from "pixi.js"
+import type {UnwrapNestedRefs} from "vue"
+import {ContextManager} from "@/models/ContextManager"
+import type {UnitOption} from "@/models/Unit"
+import {EventEmitter} from "events"
+import type {RectCoords} from "@/models/SelectArea"
 
-export type UnitOption = {
-  x: number
-  y: number
-  texture: string
-}
-
-export class Unit extends EventEmitter {
+export class Wall extends EventEmitter {
   id = generateUniqueId()
   sprite: Sprite
 
@@ -26,19 +22,6 @@ export class Unit extends EventEmitter {
     this.sprite.height = 50
     this.sprite.pivot.x = this.sprite.width / 2
     this.sprite.pivot.y = this.sprite.height / 2
-
-    this.contextManager.on('selectedUnits', (units: Unit[]) => {
-      const rectangle2 = new Graphics()
-      rectangle2.lineStyle(2, 0xFF00FF)
-      rectangle2.drawRect(0, 0, 50, 50)
-
-      if (units.map((unit) => unit.id).includes(this.id)) {
-        this.sprite.addChild(rectangle2)
-      } else {
-        if (this.sprite.children.length)
-          this.sprite.children.forEach((item) => this.sprite.removeChildAt(0))
-      }
-    })
   }
 
   render(container: Container) {
@@ -46,8 +29,17 @@ export class Unit extends EventEmitter {
     return this
   }
 
+  createImmobileArea(): RectCoords {
+    return {
+      x1: this.sprite.x,
+      y1: this.sprite.y,
+      x2: this.sprite.x + this.sprite.width,
+      y2: this.sprite.y + this.sprite.height
+    }
+  }
+
   static of(contextManager: UnwrapNestedRefs<ContextManager>,
             option?: UnitOption) {
-    return new Unit(contextManager, option)
+    return new Wall(contextManager, option)
   }
 }
