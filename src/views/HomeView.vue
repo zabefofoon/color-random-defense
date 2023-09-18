@@ -13,7 +13,6 @@ import {onMounted, reactive, ref} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import box from "@/assets/box.png"
 import ring from "@/assets/ring.png"
-import {checkRectIntersectRectCoords} from "@/utils/util"
 
 const main = ref<HTMLDivElement>()
 
@@ -21,6 +20,8 @@ const app = new Application({
   width: window.innerWidth,
   height: window.innerHeight,
   resizeTo: window,
+  antialias: true,
+  background: 'ffffff'
 })
 
 const canvas = <Node>app.view
@@ -49,14 +50,24 @@ onMounted(() => {
 
   contextManager.createWall({
     x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) - 300,
+    y: (app.renderer.height / 2) - 100,
+    texture: box
+  })
+  contextManager.createWall({
+    x: (app.renderer.width / 2) - 300,
+    y: (app.renderer.height / 2) - 150,
+    texture: box
+  })
+  contextManager.createWall({
+    x: (app.renderer.width / 2) - 300,
+    y: (app.renderer.height / 2) - 200,
     texture: box
   })
 
   main.value?.appendChild(canvas)
 
   app.ticker.add(() => {
-    contextManager.detectCollide()
+    contextManager.detectCollideWall()
   })
 
   window.addEventListener('resize', () => {

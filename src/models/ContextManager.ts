@@ -2,8 +2,7 @@ import type {UnitOption} from "@/models/Unit"
 import {Unit} from "@/models/Unit"
 import {EventEmitter} from "events"
 import {Application} from "pixi.js"
-import {gsap} from 'gsap'
-import {calculateDistance, checkRectIntersectRectCoords} from "@/utils/util"
+import {checkRectIntersectRectCoords} from "@/utils/util"
 import type {RectCoords} from "@/models/SelectArea"
 import {SelectArea} from "@/models/SelectArea"
 import {Wall} from "@/models/Wall"
@@ -24,34 +23,15 @@ export class ContextManager extends EventEmitter {
     this.selectArea = SelectArea.of(this, this.app)
   }
 
-  move({offsetX, offsetY}: MouseEvent) {
-    this.selectedUnits.forEach(({sprite}) => {
-      const distance = calculateDistance(offsetX, offsetY, sprite.x, sprite.y)
-
-
-      gsap.to(sprite, {
-        x: offsetX,
-        y: offsetY,
-        duration: distance / 250,
-        ease: 'linear'
-      })
-
-      const angleDegrees = Math.atan2(offsetY - sprite.y, offsetX - sprite.x) * (180 / Math.PI) + 90
-
-      gsap.to(sprite, {
-        rotation: (Math.PI / 180) * angleDegrees,
-        duration: .1,
-        ease: 'linear'
-      })
-    })
+  move(event: MouseEvent) {
+    this.emit('move', event)
   }
 
-  detectCollide() {
+  detectCollideWall() {
     this.units.forEach((unit) => {
       this.immobileArea.forEach((immobileArea) => {
-        if (checkRectIntersectRectCoords(immobileArea, unit.sprite)) {
-          alert(unit.id)
-        }
+        if (checkRectIntersectRectCoords(immobileArea, unit.sprite))
+          this.emit('collideWall', unit, immobileArea)
       })
     })
   }
