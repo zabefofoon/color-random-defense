@@ -1,5 +1,5 @@
 import {generateUniqueId} from "@/utils/util"
-import {Container, Sprite, Texture} from "pixi.js"
+import {Container, Graphics, Sprite, Texture} from "pixi.js"
 import type {UnwrapNestedRefs} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import type {UnitOption} from "@/models/Unit"
@@ -13,6 +13,13 @@ export class Wall extends EventEmitter {
               option?: UnitOption) {
     super()
     this.initContainer(option)
+
+    const circle = new Graphics()
+    circle.beginFill(0xFF0000, .1)
+    circle.drawCircle(25, 25, 150)
+    circle.endFill()
+    this.container.addChild(circle)
+
     this.container.addChild(this.createSprite(option))
   }
 
@@ -22,8 +29,8 @@ export class Wall extends EventEmitter {
         .find((child) => child instanceof Sprite)!
   }
 
-  render(container: Container) {
-    if (this.container) container.addChild(this.container)
+  render() {
+    if (this.container) this.contextManager.app.stage.addChild(this.container)
     return this
   }
 
@@ -37,10 +44,13 @@ export class Wall extends EventEmitter {
   private createSprite(option?: UnitOption) {
     const sprite = new Sprite(Texture.from(option?.texture || ''))
 
-    sprite.x = -(option?.width || 50)
-    sprite.y = -(option?.height || 50)
     sprite.width = option?.width || 50
     sprite.height = option?.height || 50
+
+    sprite.eventMode = 'static'
+    sprite.on('mouseover', () => {
+      console.log('첫 번째 동그라미에 마우스 오버')
+    })
 
     return sprite
   }

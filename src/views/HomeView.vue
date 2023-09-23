@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import {Application, Container} from 'pixi.js'
-import {onMounted, reactive, ref} from "vue"
+import {onMounted, ref} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import box from "@/assets/box.png"
 import ring from "@/assets/ring.png"
@@ -24,22 +24,27 @@ const app = new Application({
   background: 'ffffff'
 })
 
-const canvas = <Node>app.view
-
-const container = new Container()
-app.stage.addChild(container)
-
-const contextManager = reactive(ContextManager.of(app))
+const contextManager = ContextManager.of(app)
 
 onMounted(() => {
   const canvasEl = document.getElementsByTagName('canvas')[0]
   if (canvasEl) main.value?.removeChild(canvasEl)
+
+  main.value?.appendChild(app.view)
 
 
   contextManager.createUnit({
     x: app.renderer.width / 2,
     y: app.renderer.height / 2,
     texture: ring,
+    movable: true
+  })
+
+  contextManager.createUnit({
+    x: app.renderer.width / 2 + 200,
+    y: app.renderer.height / 2 + 200,
+    texture: ring,
+    movable: true
   })
 
   contextManager.createUnit({
@@ -49,14 +54,13 @@ onMounted(() => {
   })
 
   contextManager.createWall({
-    x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) + 100,
+    x: 300,
+    y: 300,
     width: 50,
-    height: 300,
+    height: 50,
     texture: box
   })
 
-  main.value?.appendChild(canvas)
 
   app.ticker.add(() => {
     contextManager.detectCollideWall()

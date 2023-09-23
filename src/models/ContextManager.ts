@@ -1,9 +1,8 @@
 import type {UnitOption} from "@/models/Unit"
 import {Unit} from "@/models/Unit"
 import {EventEmitter} from "events"
-import {Application} from "pixi.js"
+import {Application, Container} from "pixi.js"
 import {checkCollisionUnitWithUnit, checkCollisionUnitWithWall} from "@/utils/util"
-import type {RectCoords} from "@/models/SelectArea"
 import {SelectArea} from "@/models/SelectArea"
 import {Wall} from "@/models/Wall"
 
@@ -12,15 +11,17 @@ export class ContextManager extends EventEmitter {
 
   units: Unit[] = []
 
-  app?: Application
-
   selectArea: SelectArea
 
   walls: Wall[] = []
 
-  constructor(app: Application) {
+  container = new Container()
+
+  constructor(
+      public readonly app: Application) {
     super()
     this.app = app
+    this.app.stage.addChild(this.container)
     this.selectArea = SelectArea.of(this, this.app)
   }
 
@@ -54,14 +55,16 @@ export class ContextManager extends EventEmitter {
 
   createUnit(option: UnitOption) {
     if (!this.app) return
-    const unit = Unit.of(this, option).render(this.app.stage)
+    const unit = Unit.of(this, option).render()
     this.units.push(unit)
+    return unit
   }
 
   createWall(option: UnitOption) {
     if (!this.app) return
-    const wall = Wall.of(this, option).render(this.app.stage)
+    const wall = Wall.of(this, option).render()
     this.walls.push(wall)
+    return wall
   }
 
   emitMousedown(event: MouseEvent) {

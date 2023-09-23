@@ -6,8 +6,8 @@ import type {UnwrapRef} from "vue"
 import {Wall} from "@/models/Wall"
 
 export type NonFunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? never : K;
-}[keyof T];
+  [K in keyof T]: T[K] extends Function ? never : K
+}[keyof T]
 
 export const generateUniqueId = (): string => new ShortUniqueId({dictionary: 'alpha'}).randomUUID(10)
 
@@ -41,22 +41,27 @@ export const checkRectIntersectRectCoords = ({x1, y1, x2, y2}: RectCoords,
       y2Bottom >= y1Top
 }
 
-export const checkCollisionUnitWithWall = (unit: Unit,
-                                           wall: Wall) => {
-  const circleBounds = unit.sprite.getBounds()
-
-  const rectangleBounds = wall.sprite.getBounds()
+export const checkCollisionUnitWithWall = (unit: Unit, wall: Wall) => {
+  const unitBounds = unit.sprite.getBounds()
+  const wallBounds = wall.sprite.getBounds()
 
   // Bounding Box 간의 충돌 검사
-  return circleBounds.x + circleBounds.width > rectangleBounds.x
-      && circleBounds.x < rectangleBounds.x + rectangleBounds.width
-      && circleBounds.y + circleBounds.height > rectangleBounds.y
-      && circleBounds.y < rectangleBounds.y + rectangleBounds.height
+  const unitRight = unitBounds.x + unitBounds.width
+  const wallRight = wallBounds.x + wallBounds.width
+  const unitBottom = unitBounds.y + unitBounds.height
+  const wallBottom = wallBounds.y + wallBounds.height
+
+  return (
+      unitRight >= wallBounds.x &&
+      unitBounds.x <= wallRight &&
+      unitBottom >= wallBounds.y &&
+      unitBounds.y <= wallBottom
+  )
 }
 
 export const checkCollisionUnitWithUnit = (unitA: Unit, unitB: Unit) => {
-  const dx = (unitA.sprite.getBounds().x + unitA.sprite.getBounds().x + unitA.sprite.getBounds().width) / 2 - (unitB.sprite.getBounds().x + unitB.sprite.getBounds().x + unitB.sprite.getBounds().width) / 2
-  const dy = (unitA.sprite.getBounds().y + unitA.sprite.getBounds().y + unitA.sprite.getBounds().height) / 2 - (unitB.sprite.getBounds().y + unitB.sprite.getBounds().y + unitB.sprite.getBounds().height) / 2
+  const dx = (parseInt(`${unitA.sprite.getBounds().x}`) + parseInt(`${unitA.sprite.getBounds().x}`) + parseInt(`${unitA.sprite.getBounds().width}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().width}`)) / 2
+  const dy = (parseInt(`${unitA.sprite.getBounds().y}`) + parseInt(`${unitA.sprite.getBounds().y}`) + parseInt(`${unitA.sprite.getBounds().height}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().height}`)) / 2
   const distance = Math.sqrt(dx * dx + dy * dy)
-  return distance <= unitA.sprite.getBounds().width / 2 + unitB.sprite.getBounds().width / 2
+  return distance <= parseInt(`${unitA.sprite.getBounds().width}`) / 2 + parseInt(`${unitB.sprite.getBounds().width}`) / 2
 }
