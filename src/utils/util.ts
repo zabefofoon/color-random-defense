@@ -55,8 +55,8 @@ export const checkCollisionUnitWithWall = (unit: Unit,
 }
 
 export const checkCollisionUnitWithUnit = (unitA: Unit, unitB: Unit) => {
-  const dx = unitA.sprite.getBounds().x - unitB.sprite.getBounds().x
-  const dy = unitA.sprite.getBounds().y - unitB.sprite.getBounds().y
+  const dx = (unitA.sprite.getBounds().x + unitA.sprite.getBounds().x + unitA.sprite.getBounds().width) / 2 - (unitB.sprite.getBounds().x + unitB.sprite.getBounds().x + unitB.sprite.getBounds().width) / 2
+  const dy = (unitA.sprite.getBounds().y + unitA.sprite.getBounds().y + unitA.sprite.getBounds().height) / 2 - (unitB.sprite.getBounds().y + unitB.sprite.getBounds().y + unitB.sprite.getBounds().height) / 2
   const distance = Math.sqrt(dx * dx + dy * dy)
   return distance <= unitA.sprite.getBounds().width / 2 + unitB.sprite.getBounds().width / 2
 }

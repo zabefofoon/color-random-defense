@@ -6,9 +6,11 @@ import {calculateDistance, generateUniqueId} from "@/utils/util"
 import {gsap} from "gsap"
 
 export type UnitOption = {
-  x: number
-  y: number
-  texture: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  texture?: string
 }
 
 export class Unit extends EventEmitter {
@@ -48,27 +50,20 @@ export class Unit extends EventEmitter {
         this.selectedIndicator.drawCircle(0, 0, 25)
         this.container.addChild(this.selectedIndicator)
       } else {
-        if (this.selectedIndicator)
-          this.container.removeChild(this.selectedIndicator)
+        this.container.removeChild(this.selectedIndicator)
       }
     })
 
     this.contextManager.on('collideWall', (unit, wall) => {
       if (unit.id === this.id) {
-        const dx = (this.container.getBounds().x + this.container.getBounds().width) / 2 - (wall.sprite.getBounds().x + wall.sprite.getBounds().width) / 2
-        const dy = (this.container.getBounds().y + this.container.getBounds().height) / 2 - (wall.sprite.getBounds().y + wall.sprite.getBounds().height) / 2
-        const distance = Math.sqrt(dx * dx + dy * dy)
+        const thisCenterX = (this.container.getBounds().x + this.container.getBounds().width) / 2
+        const anotherCenterX = (wall.sprite.getBounds().x + wall.sprite.getBounds().width) / 2
+        const thisCenterY = (this.container.getBounds().y + this.container.getBounds().height) / 2
+        const anotherCenterY = (wall.sprite.getBounds().y + wall.sprite.getBounds().height) / 2
 
-        if (distance <= 50) {
-          const thisCenterX = (this.container.getBounds().x + this.container.getBounds().width) / 2
-          const anotherCenterX = (wall.sprite.getBounds().x + wall.sprite.getBounds().width) / 2
-          const thisCenterY = (this.container.getBounds().y + this.container.getBounds().height) / 2
-          const anotherCenterY = (wall.sprite.getBounds().y + wall.sprite.getBounds().height) / 2
-
-          this.container.x += thisCenterX > anotherCenterX ? 2 : -2
-          this.container.y += thisCenterY > anotherCenterY ? 2 : -2
-          this.movingAnimation?.pause()
-        }
+        this.container.x += thisCenterX > anotherCenterX ? 5 : -5
+        this.container.y += thisCenterY > anotherCenterY ? 5 : -2
+        this.movingAnimation?.pause()
       }
     })
 
@@ -76,18 +71,13 @@ export class Unit extends EventEmitter {
       if (this.id === unit1.id
           || this.id === unit2.id) {
 
-        const dx = unit1.container.getBounds().x - unit2.container.getBounds().x
-        const dy = unit1.container.getBounds().y - unit2.container.getBounds().y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        if (distance <= 50) {
-          const thisCenterX = this.container.getBounds().x + this.container.getBounds().width / 2
-          const anotherCenterX = unit2.container.getBounds().x + unit2.container.getBounds().width / 2
-          const thisCenterY = this.container.getBounds().y + this.container.getBounds().height / 2
-          const anotherCenterY = unit2.container.getBounds().y + unit2.container.getBounds().height / 2
+        const thisCenterX = this.container.getBounds().x + this.container.getBounds().width / 2
+        const anotherCenterX = unit2.container.getBounds().x + unit2.container.getBounds().width / 2
+        const thisCenterY = this.container.getBounds().y + this.container.getBounds().height / 2
+        const anotherCenterY = unit2.container.getBounds().y + unit2.container.getBounds().height / 2
 
-          this.container.x += thisCenterX >= anotherCenterX ? 2 : -2
-          this.container.y += thisCenterY >= anotherCenterY ? 2 : -2
-        }
+        this.container.x += thisCenterX >= anotherCenterX ? 5 : -5
+        this.container.y += thisCenterY >= anotherCenterY ? 5 : -5
       }
     })
 

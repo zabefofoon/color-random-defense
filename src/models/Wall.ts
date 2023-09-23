@@ -1,5 +1,5 @@
 import {generateUniqueId} from "@/utils/util"
-import {Container, Graphics, Sprite, Texture} from "pixi.js"
+import {Container, Sprite, Texture} from "pixi.js"
 import type {UnwrapNestedRefs} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import type {UnitOption} from "@/models/Unit"
@@ -12,37 +12,14 @@ export class Wall extends EventEmitter {
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               option?: UnitOption) {
     super()
-
-    this.container.x = option?.x || 0
-    this.container.y = option?.y || 0
-    this.container.width = 50
-    this.container.height = 50
-
-    const sprite = new Sprite(Texture.from(option?.texture || ''))
-
-    sprite.x = -50
-    sprite.y = -50
-    sprite.width = 50
-    sprite.height = 50
-
-    const circle = new Graphics()
-    circle.lineStyle(1, '0xff0000', .5)
-    circle.beginFill('0xff0000', .1)
-    circle.drawCircle(-25, -25, 100)
-    circle.endFill()
-
-    this.container.addChild(circle)
-    this.container.addChild(sprite)
-
-    const rect = new Graphics()
-    rect.lineStyle(2, 0x000000)
-    rect.drawRect(-50, -50, 50, 50)
-    this.container.addChild(rect)
-
+    this.initContainer(option)
+    this.container.addChild(this.createSprite(option))
   }
 
   get sprite() {
-    return this.container.children.find((child) => child instanceof Sprite)!
+    return this.container
+        .children
+        .find((child) => child instanceof Sprite)!
   }
 
   render(container: Container) {
@@ -50,6 +27,23 @@ export class Wall extends EventEmitter {
     return this
   }
 
+  private initContainer(option?: UnitOption) {
+    this.container.x = option?.x || 0
+    this.container.y = option?.y || 0
+    this.container.width = option?.width || 50
+    this.container.height = option?.height || 50
+  }
+
+  private createSprite(option?: UnitOption) {
+    const sprite = new Sprite(Texture.from(option?.texture || ''))
+
+    sprite.x = -(option?.width || 50)
+    sprite.y = -(option?.height || 50)
+    sprite.width = option?.width || 50
+    sprite.height = option?.height || 50
+
+    return sprite
+  }
 
   static of(contextManager: UnwrapNestedRefs<ContextManager>,
             option?: UnitOption) {

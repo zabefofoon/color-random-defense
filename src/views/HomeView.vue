@@ -50,13 +50,9 @@ onMounted(() => {
 
   contextManager.createWall({
     x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) - 100,
-    texture: box
-  })
-
-  contextManager.createWall({
-    x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) - 150,
+    y: (app.renderer.height / 2) + 100,
+    width: 50,
+    height: 300,
     texture: box
   })
 
