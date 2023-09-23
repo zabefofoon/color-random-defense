@@ -1,4 +1,4 @@
-import {Container, Graphics, Sprite, Texture} from "pixi.js"
+import {Container, DisplayObject, Graphics, Sprite, Texture} from "pixi.js"
 import {EventEmitter} from "events"
 import type {ContextManager} from "@/models/ContextManager"
 import type {UnwrapNestedRefs} from "vue"
@@ -14,7 +14,10 @@ export type UnitOption = {
 export class Unit extends EventEmitter {
   id = generateUniqueId()
   sprite: Sprite
+  container: Container = new Container()
   movingAnimation?: gsap.core.Tween
+
+  selectedIndicator = new Graphics()
 
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               option?: UnitOption) {
@@ -28,33 +31,65 @@ export class Unit extends EventEmitter {
     this.sprite.height = 50
     this.sprite.pivot.x = this.sprite.width / 2
     this.sprite.pivot.y = this.sprite.height / 2
+    const circle = new Graphics()
+    circle.lineStyle(2, 0x0000FF)
+    circle.pivot.x = -25
+    circle.pivot.y = -25
+    circle.beginFill(0xFF0000);
+    circle.drawCircle(0, 0, 25)
+    circle.endFill();
+
+    this.sprite.addChild(circle)
 
     this.contextManager.on('selectedUnits', (units: Unit[]) => {
-      const rectangle2 = new Graphics()
-      rectangle2.lineStyle(2, 0xFF00FF)
-      rectangle2.drawRect(0, 0, 50, 50)
-
       if (units.map((unit) => unit.id).includes(this.id)) {
-        this.sprite.addChild(rectangle2)
+        this.selectedIndicator.lineStyle(2, 0xFF00FF)
+        this.selectedIndicator.drawCircle(0, 0, 25)
+        this.selectedIndicator.pivot.x = -this.sprite.width / 2
+        this.selectedIndicator.pivot.y = -this.sprite.height / 2
+        this.sprite.addChild(this.selectedIndicator)
       } else {
-        if (this.sprite.children.length)
-          this.sprite.children.forEach((item) => this.sprite.removeChildAt(0))
+        if (this.selectedIndicator)
+          this.sprite.removeChild(this.selectedIndicator)
       }
     })
 
-    this.contextManager.on('collideWall', (unit, immobileArea) => {
+    this.contextManager.on('collideWall', (unit, wall) => {
       if (unit.id === this.id) {
+        const dx = this.sprite.x - wall.sprite.x
+        const dy = this.sprite.y - wall.sprite.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (immobileArea.x2 - this.sprite.x <= 10)
-          this.sprite.x += 2
-        if ((this.sprite.x + this.sprite.width) - immobileArea.x1 <= 10)
-          this.sprite.x -= 2
-        if (immobileArea.y2 - this.sprite.y <= 10)
-          this.sprite.y += 2
-        if ((this.sprite.y + this.sprite.height) - immobileArea.y2 <= 10)
-          this.sprite.y -= 2
+        if (distance <= 55) {
+          const thisCenterX = this.sprite.x + this.sprite.width / 2
+          const anotherCenterX = wall.sprite.x + wall.sprite.width / 2
+          const thisCenterY = this.sprite.y + this.sprite.height / 2
+          const anotherCenterY = wall.sprite.y + wall.sprite.height / 2
 
-        this.movingAnimation?.pause()
+          this.sprite.x += thisCenterX > anotherCenterX ? 2 : -2
+          this.sprite.y += thisCenterY > anotherCenterY ? 2 : -2
+          this.movingAnimation?.pause()
+        }
+      }
+    })
+
+    this.contextManager.on('collideUnits', (unit1, unit2) => {
+      if (this.id === unit1.id
+          || this.id === unit2.id) {
+
+        const dx = unit1.sprite.x - unit2.sprite.x
+        const dy = unit1.sprite.y - unit2.sprite.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance <= 50) {
+          const thisCenterX = this.sprite.x + this.sprite.width / 2
+          const anotherCenterX = unit2.sprite.x + unit2.sprite.width / 2
+          const thisCenterY = this.sprite.y + this.sprite.height / 2
+          const anotherCenterY = unit2.sprite.y + unit2.sprite.height / 2
+
+          this.sprite.x += thisCenterX > anotherCenterX ? 2 : -2
+          this.sprite.y += thisCenterY > anotherCenterY ? 2 : -2
+        }
       }
     })
 

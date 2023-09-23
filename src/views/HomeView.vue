@@ -53,21 +53,12 @@ onMounted(() => {
     y: (app.renderer.height / 2) - 100,
     texture: box
   })
-  contextManager.createWall({
-    x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) - 150,
-    texture: box
-  })
-  contextManager.createWall({
-    x: (app.renderer.width / 2) - 300,
-    y: (app.renderer.height / 2) - 200,
-    texture: box
-  })
 
   main.value?.appendChild(canvas)
 
   app.ticker.add(() => {
     contextManager.detectCollideWall()
+    contextManager.detectCollideCircle()
   })
 
   window.addEventListener('resize', () => {

@@ -1,10 +1,9 @@
 import {generateUniqueId} from "@/utils/util"
-import {Container, Graphics, Sprite, Texture} from "pixi.js"
+import {Container, Sprite, Texture} from "pixi.js"
 import type {UnwrapNestedRefs} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import type {UnitOption} from "@/models/Unit"
 import {EventEmitter} from "events"
-import type {RectCoords} from "@/models/SelectArea"
 
 export class Wall extends EventEmitter {
   id = generateUniqueId()
@@ -27,15 +26,6 @@ export class Wall extends EventEmitter {
   render(container: Container) {
     if (this.sprite) container.addChild(this.sprite)
     return this
-  }
-
-  createImmobileArea(): RectCoords {
-    return {
-      x1: this.sprite.x,
-      y1: this.sprite.y,
-      x2: this.sprite.x + this.sprite.width,
-      y2: this.sprite.y + this.sprite.height
-    }
   }
 
   static of(contextManager: UnwrapNestedRefs<ContextManager>,

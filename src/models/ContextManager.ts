@@ -2,7 +2,7 @@ import type {UnitOption} from "@/models/Unit"
 import {Unit} from "@/models/Unit"
 import {EventEmitter} from "events"
 import {Application} from "pixi.js"
-import {checkRectIntersectRectCoords} from "@/utils/util"
+import {checkCollisionUnitWithUnit, checkCollisionUnitWithWall} from "@/utils/util"
 import type {RectCoords} from "@/models/SelectArea"
 import {SelectArea} from "@/models/SelectArea"
 import {Wall} from "@/models/Wall"
@@ -15,7 +15,8 @@ export class ContextManager extends EventEmitter {
   app?: Application
 
   selectArea: SelectArea
-  immobileArea: RectCoords[] = []
+
+  walls: Wall[] = []
 
   constructor(app: Application) {
     super()
@@ -28,10 +29,20 @@ export class ContextManager extends EventEmitter {
   }
 
   detectCollideWall() {
+
     this.units.forEach((unit) => {
-      this.immobileArea.forEach((immobileArea) => {
-        if (checkRectIntersectRectCoords(immobileArea, unit.sprite))
-          this.emit('collideWall', unit, immobileArea)
+      this.walls.forEach((wall) => {
+        if (checkCollisionUnitWithWall(unit, wall))
+          this.emit('collideWall', unit, wall)
+      })
+    })
+  }
+
+  detectCollideCircle() {
+    this.units.forEach((unit1) => {
+      this.units.forEach((unit2) => {
+        if (unit1 !== unit2 && checkCollisionUnitWithUnit(unit1, unit2))
+          this.emit('collideUnits', unit1, unit2)
       })
     })
   }
@@ -50,7 +61,7 @@ export class ContextManager extends EventEmitter {
   createWall(option: UnitOption) {
     if (!this.app) return
     const wall = Wall.of(this, option).render(this.app.stage)
-    this.immobileArea.push(wall.createImmobileArea())
+    this.walls.push(wall)
   }
 
   emitMousedown(event: MouseEvent) {
