@@ -19,13 +19,11 @@ export const calculateDistance = (x1: number,
                                   y2: number) => Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
 
 export const checkRectIntersectRectCoords = ({x1, y1, x2, y2}: RectCoords,
-                                             rect: Sprite | UnwrapRef<Unit["sprite"]>,
-                                             adjustRectX?: number,
-                                             adjustRectY?: number) => {
-  const x2Left = rect.x + (adjustRectX || 0)
-  const x2Right = x2Left + rect.width
-  const y2Top = rect.y + (adjustRectY || 0)
-  const y2Bottom = y2Top + rect.height
+                                             rect: Sprite | UnwrapRef<Unit["sprite"]>,) => {
+  const x2Left = rect.getBounds().x
+  const x2Right = x2Left + rect.getBounds().width
+  const y2Top = rect.getBounds().y
+  const y2Bottom = y2Top + rect.getBounds().height
 
   // 첫 번째 사각형의 좌측 상단 점
   const x1Left = Math.min(x1, x2)
@@ -57,8 +55,8 @@ export const checkCollisionUnitWithWall = (unit: Unit,
 }
 
 export const checkCollisionUnitWithUnit = (unitA: Unit, unitB: Unit) => {
-  const dx = unitA.sprite.x - unitB.sprite.x
-  const dy = unitA.sprite.y - unitB.sprite.y
+  const dx = unitA.sprite.getBounds().x - unitB.sprite.getBounds().x
+  const dy = unitA.sprite.getBounds().y - unitB.sprite.getBounds().y
   const distance = Math.sqrt(dx * dx + dy * dy)
-  return distance <= unitA.sprite.width / 2 + unitB.sprite.width / 2
+  return distance <= unitA.sprite.getBounds().width / 2 + unitB.sprite.getBounds().width / 2
 }

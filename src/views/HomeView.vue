@@ -54,6 +54,12 @@ onMounted(() => {
     texture: box
   })
 
+  contextManager.createWall({
+    x: (app.renderer.width / 2) - 300,
+    y: (app.renderer.height / 2) - 150,
+    texture: box
+  })
+
   main.value?.appendChild(canvas)
 
   app.ticker.add(() => {

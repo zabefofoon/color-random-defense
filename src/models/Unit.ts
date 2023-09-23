@@ -13,8 +13,7 @@ export type UnitOption = {
 
 export class Unit extends EventEmitter {
   id = generateUniqueId()
-  sprite: Sprite
-  container: Container = new Container()
+  container: Container = new Container<DisplayObject>()
   movingAnimation?: gsap.core.Tween
 
   selectedIndicator = new Graphics()
@@ -23,51 +22,51 @@ export class Unit extends EventEmitter {
               option?: UnitOption) {
     super()
 
-    this.sprite = new Sprite(Texture.from(option?.texture || ''))
+    this.container.x = option?.x || 0
+    this.container.y = option?.y || 0
+    this.container.width = 50
+    this.container.height = 50
 
-    this.sprite.x = option?.x || 0
-    this.sprite.y = option?.y || 0
-    this.sprite.width = 50
-    this.sprite.height = 50
-    this.sprite.pivot.x = this.sprite.width / 2
-    this.sprite.pivot.y = this.sprite.height / 2
     const circle = new Graphics()
-    circle.lineStyle(2, 0x0000FF)
-    circle.pivot.x = -25
-    circle.pivot.y = -25
-    circle.beginFill(0xFF0000);
-    circle.drawCircle(0, 0, 25)
+    circle.lineStyle(1, 0xFF0000)
+    circle.beginFill(0xFF0000, .1);
+    circle.drawCircle(0, 0, 50)
     circle.endFill();
 
-    this.sprite.addChild(circle)
+    this.container.addChild(circle)
+
+    const sprite = new Sprite(Texture.from(option?.texture || ''))
+    sprite.x = -25
+    sprite.y = -25
+
+    this.container.addChild(sprite)
+
 
     this.contextManager.on('selectedUnits', (units: Unit[]) => {
       if (units.map((unit) => unit.id).includes(this.id)) {
         this.selectedIndicator.lineStyle(2, 0xFF00FF)
         this.selectedIndicator.drawCircle(0, 0, 25)
-        this.selectedIndicator.pivot.x = -this.sprite.width / 2
-        this.selectedIndicator.pivot.y = -this.sprite.height / 2
-        this.sprite.addChild(this.selectedIndicator)
+        this.container.addChild(this.selectedIndicator)
       } else {
         if (this.selectedIndicator)
-          this.sprite.removeChild(this.selectedIndicator)
+          this.container.removeChild(this.selectedIndicator)
       }
     })
 
     this.contextManager.on('collideWall', (unit, wall) => {
       if (unit.id === this.id) {
-        const dx = this.sprite.x - wall.sprite.x
-        const dy = this.sprite.y - wall.sprite.y
+        const dx = (this.container.getBounds().x + this.container.getBounds().width) / 2 - (wall.sprite.getBounds().x + wall.sprite.getBounds().width) / 2
+        const dy = (this.container.getBounds().y + this.container.getBounds().height) / 2 - (wall.sprite.getBounds().y + wall.sprite.getBounds().height) / 2
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (distance <= 55) {
-          const thisCenterX = this.sprite.x + this.sprite.width / 2
-          const anotherCenterX = wall.sprite.x + wall.sprite.width / 2
-          const thisCenterY = this.sprite.y + this.sprite.height / 2
-          const anotherCenterY = wall.sprite.y + wall.sprite.height / 2
+        if (distance <= 50) {
+          const thisCenterX = (this.container.getBounds().x + this.container.getBounds().width) / 2
+          const anotherCenterX = (wall.sprite.getBounds().x + wall.sprite.getBounds().width) / 2
+          const thisCenterY = (this.container.getBounds().y + this.container.getBounds().height) / 2
+          const anotherCenterY = (wall.sprite.getBounds().y + wall.sprite.getBounds().height) / 2
 
-          this.sprite.x += thisCenterX > anotherCenterX ? 2 : -2
-          this.sprite.y += thisCenterY > anotherCenterY ? 2 : -2
+          this.container.x += thisCenterX > anotherCenterX ? 2 : -2
+          this.container.y += thisCenterY > anotherCenterY ? 2 : -2
           this.movingAnimation?.pause()
         }
       }
@@ -77,18 +76,17 @@ export class Unit extends EventEmitter {
       if (this.id === unit1.id
           || this.id === unit2.id) {
 
-        const dx = unit1.sprite.x - unit2.sprite.x
-        const dy = unit1.sprite.y - unit2.sprite.y
+        const dx = unit1.container.getBounds().x - unit2.container.getBounds().x
+        const dy = unit1.container.getBounds().y - unit2.container.getBounds().y
         const distance = Math.sqrt(dx * dx + dy * dy)
-
         if (distance <= 50) {
-          const thisCenterX = this.sprite.x + this.sprite.width / 2
-          const anotherCenterX = unit2.sprite.x + unit2.sprite.width / 2
-          const thisCenterY = this.sprite.y + this.sprite.height / 2
-          const anotherCenterY = unit2.sprite.y + unit2.sprite.height / 2
+          const thisCenterX = this.container.getBounds().x + this.container.getBounds().width / 2
+          const anotherCenterX = unit2.container.getBounds().x + unit2.container.getBounds().width / 2
+          const thisCenterY = this.container.getBounds().y + this.container.getBounds().height / 2
+          const anotherCenterY = unit2.container.getBounds().y + unit2.container.getBounds().height / 2
 
-          this.sprite.x += thisCenterX > anotherCenterX ? 2 : -2
-          this.sprite.y += thisCenterY > anotherCenterY ? 2 : -2
+          this.container.x += thisCenterX >= anotherCenterX ? 2 : -2
+          this.container.y += thisCenterY >= anotherCenterY ? 2 : -2
         }
       }
     })
@@ -97,18 +95,18 @@ export class Unit extends EventEmitter {
       this.contextManager.selectedUnits.forEach((unit) => {
         if (unit.id === this.id) {
           this.movingAnimation?.pause()
-          const distance = calculateDistance(offsetX, offsetY, this.sprite.x, this.sprite.y)
+          const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
 
-          this.movingAnimation = gsap.to(this.sprite, {
+          this.movingAnimation = gsap.to(this.container, {
             x: offsetX,
             y: offsetY,
             duration: distance / 250,
             ease: 'linear'
           })
 
-          const angleDegrees = Math.atan2(offsetY - this.sprite.y, offsetX - this.sprite.x) * (180 / Math.PI) + 90
+          const angleDegrees = Math.atan2(offsetY - this.container.y, offsetX - this.container.x) * (180 / Math.PI) + 90
 
-          gsap.to(this.sprite, {
+          gsap.to(this.container, {
             rotation: (Math.PI / 180) * angleDegrees,
             duration: .1,
             ease: 'linear'
@@ -118,8 +116,12 @@ export class Unit extends EventEmitter {
     })
   }
 
+  get sprite() {
+    return this.container.children.find((child) => child instanceof Sprite)!
+  }
+
   render(container: Container) {
-    if (this.sprite) container.addChild(this.sprite)
+    if (this.container) container.addChild(this.container)
     return this
   }
 

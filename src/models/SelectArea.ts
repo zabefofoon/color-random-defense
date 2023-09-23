@@ -56,8 +56,10 @@ export class SelectArea {
           ? this.areaCoords.y1 - this.areaCoords.y2
           : this.areaCoords.y2 - this.areaCoords.y1
 
-      this.selectAreaRect.lineStyle(2, 0xFF00FF)
+      this.selectAreaRect.lineStyle(2, 0xFF00FF, .5)
+      this.selectAreaRect.beginFill(0xFF00FF, .1)
       this.selectAreaRect.drawRect(x1, y1, x2, y2)
+      this.selectAreaRect.endFill()
     })
 
     this.contextManager.on('mouseup', () => {
@@ -66,9 +68,7 @@ export class SelectArea {
       const intersected = this.contextManager.units
           .filter((unit): unit is Unit => checkRectIntersectRectCoords(
               <RectCoords>this.areaCoords,
-              <Sprite>unit.sprite,
-              -(unit?.sprite.width / 2),
-              -(unit?.sprite.height / 2)))
+              <Sprite>unit.sprite))
 
       this.contextManager.selectUnits(intersected)
 
