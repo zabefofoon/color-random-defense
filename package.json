@@ -13,6 +13,7 @@
   "dependencies": {
     "events": "^3.3.0",
     "gsap": "^3.12.2",
+    "lodash.debounce": "^4.0.8",
     "pinia": "^2.1.6",
     "pixi.js": "^7.3.1",
     "short-unique-id": "^5.0.2",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@tsconfig/node18": "^18.2.0",
     "@types/events": "^3.0.0",
+    "@types/lodash.debounce": "^4.0.7",
     "@types/node": "^18.17.5",
     "@vitejs/plugin-vue": "^4.3.1",
     "@vue/tsconfig": "^0.4.0",

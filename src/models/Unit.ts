@@ -12,33 +12,42 @@ export type UnitOption = {
   height?: number
   texture?: string
   movable?: boolean
+  attackable?: boolean
 }
 
 export class Unit extends EventEmitter {
   id = generateUniqueId()
   container: Container = new Container<DisplayObject>()
   movingAnimation?: gsap.core.Tween
+  attackAnimation?: gsap.core.Tween
 
   selectedIndicator = new Graphics()
   preselectedIndicator = new Graphics()
 
+  attackArea = new Graphics()
+  attackableTargetIds: string[] = []
+  attackTargetId?: string
+
+  attackCoolTime = false
+  attackTimer?: number
   movable: boolean
+  attackable = false
 
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               option?: UnitOption) {
     super()
-
+    this.attackable = option?.attackable || false
     this.movable = option?.movable || false
 
     this.container.x = option?.x || 0
     this.container.y = option?.y || 0
 
 
-    const circle = new Graphics()
-    circle.beginFill(0xFF0000, .1)
-    circle.drawCircle(0, 0, 150)
-    circle.endFill()
-    this.container.addChild(circle)
+    this.attackArea.beginFill(0xFF0000)
+    this.attackArea.drawCircle(0, 0, 150)
+    this.attackArea.endFill()
+    this.attackArea.alpha = 0
+    this.container.addChild(this.attackArea)
 
     const sprite = new Sprite(Texture.from(option?.texture || ''))
     sprite.width = 50
@@ -60,8 +69,31 @@ export class Unit extends EventEmitter {
 
     this.container.addChild(sprite)
 
+    this.contextManager.on('attackReady', (units: Unit[]) => {
+      if (!this.attackable) return
+      if (units.map((unit) => unit.id).includes(this.id)) {
+        this.attackArea.alpha = .1
+      }
+    })
 
-    this.contextManager.on('selectedUnits', (units: Unit[]) => {
+
+    if (this.movable)
+      this.contextManager.on('attackStart', (attackingUnitIds: string[],
+                                             attackedUnitIds: string[]) => {
+        if (!this.attackable) return
+
+        if (attackingUnitIds.includes(this.id)) {
+          this.attackArea.alpha = 0
+
+          this.movingAnimation?.pause()
+          this.attackAnimation?.pause()
+          this.attackTargetId = attackedUnitIds[0]
+
+          this.attack()
+        }
+      })
+
+    this.contextManager.on('selectUnits', (units: Unit[]) => {
       if (units.map((unit) => unit.id).includes(this.id)) {
         this.selectedIndicator.lineStyle(2, 0xFF00FF)
         this.selectedIndicator.drawCircle(0, 0, 25)
@@ -108,7 +140,10 @@ export class Unit extends EventEmitter {
       this.contextManager.on('move', ({offsetX, offsetY}: MouseEvent) => {
         this.contextManager.selectedUnits.forEach((unit) => {
           if (unit.id === this.id) {
+            this.attackTargetId = undefined
             this.movingAnimation?.pause()
+            this.attackAnimation?.pause()
+
             const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
 
             this.movingAnimation = gsap.to(this.container, {
@@ -128,6 +163,110 @@ export class Unit extends EventEmitter {
           }
         })
       })
+
+    if (this.attackable)
+      this.contextManager.on('collideAttackArea', (unit1: Unit, unit2: Unit) => {
+        if (this.id === unit1.id) {
+          if (unit2.id === this.attackTargetId)
+            this.attackAnimation?.pause()
+          else if (!this.attackableTargetIds.includes(unit2.id)
+              && !unit2.attackable) {
+            this.attackableTargetIds?.push(unit2.id)
+          } else if (!this.attackTargetId) {
+            const targetBound = unit2.sprite.getBounds()
+            const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
+            const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+
+            const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+            if (distance <= 150) this.attackAnimation?.pause()
+          }
+
+          this.attack()
+        }
+      })
+
+    if (this.movable)
+      this.contextManager.on('leaveAttackArea', (unit1, unit2) => {
+        if (this.id === unit1.id) {
+          if (this.attackableTargetIds.includes(unit2.id)) {
+            this.attackableTargetIds.splice(this.attackableTargetIds.indexOf(unit2.id), 1)
+          }
+        }
+      })
+  }
+
+  attack() {
+    if (!this.attackable) return
+
+    this.withAttackCoolTime(() => {
+
+      const attackTarget = this.attackTargetId
+          ? this.contextManager.findUnit(this.attackTargetId)
+          : this.contextManager.findUnit(this.sortAttackTargetByDistance()[0])
+
+      if (attackTarget && !attackTarget.attackable) {
+        //this.attackTargetId = attackTarget.id
+        this.traceAttackTarget(attackTarget)
+      }
+    })
+  }
+
+  traceAttackTarget(attackTarget: Unit) {
+    this.movingAnimation?.pause()
+    this.attackAnimation?.pause()
+
+    const targetBound = attackTarget.sprite.getBounds()
+    const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
+    const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+
+    const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+
+    if (parseInt(String(distance)) >= 150)
+      this.attackAnimation = gsap.to(this.container, {
+        x: offsetX,
+        y: offsetY,
+        duration: distance / 250,
+        ease: 'linear',
+      })
+
+    const angleDegrees = Math.atan2(offsetY - this.container.y, offsetX - this.container.x) * (180 / Math.PI) + 90
+
+    gsap.to(this.container, {
+      rotation: (Math.PI / 180) * angleDegrees,
+      duration: .1,
+      ease: 'linear'
+    })
+  }
+
+  sortAttackTargetByDistance() {
+    return this.attackableTargetIds
+        .slice()
+        .sort((a, b) => {
+          const thisBound = this.sprite.getBounds()
+
+
+          const foundA = this.contextManager.findUnit(a)
+          const foundBoundA = foundA.sprite.getBounds()
+          const distanceA = calculateDistance(foundBoundA.x, foundBoundA.y, thisBound.x, thisBound.y)
+
+          const foundB = this.contextManager.findUnit(b)
+          const foundBoundB = foundB.sprite.getBounds()
+          const distanceB = calculateDistance(foundBoundB.x, foundBoundB.y, thisBound.x, thisBound.y)
+
+
+          return distanceA - distanceB
+        })
+  }
+
+  withAttackCoolTime(cb: () => void) {
+    if (!this.attackCoolTime) {
+      cb()
+      this.attackCoolTime = true
+      clearTimeout(this.attackTimer)
+      this.attackTimer = setTimeout(() => {
+        this.attackCoolTime = false
+      }, 1000)
+    }
   }
 
   get sprite() {

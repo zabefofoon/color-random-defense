@@ -47,11 +47,6 @@ export class Wall extends EventEmitter {
     sprite.width = option?.width || 50
     sprite.height = option?.height || 50
 
-    sprite.eventMode = 'static'
-    sprite.on('mouseover', () => {
-      console.log('첫 번째 동그라미에 마우스 오버')
-    })
-
     return sprite
   }
 
