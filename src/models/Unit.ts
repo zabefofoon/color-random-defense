@@ -34,6 +34,13 @@ export class Unit extends EventEmitter {
   movable: boolean
   attackable = false
 
+  attackTargetLength = 1
+
+  traceTarget?: Unit
+
+  healthPoint = 50
+  manaPoint = 50
+
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               option?: UnitOption) {
     super()
@@ -118,6 +125,7 @@ export class Unit extends EventEmitter {
         this.contextManager.selectedUnits.forEach((unit) => {
           if (unit.id === this.id) {
             this.attackTargetId = undefined
+            this.traceTarget = undefined
             this.movingAnimation?.pause()
             this.attackAnimation?.pause()
 
@@ -160,7 +168,7 @@ export class Unit extends EventEmitter {
           this.movingAnimation?.pause()
           this.attackAnimation?.pause()
           this.attackTargetId = attackedUnitIds[0]
-
+          this.traceTarget = this.contextManager.findUnit(attackedUnitIds[0])
           this.attack()
         }
       })
@@ -188,10 +196,10 @@ export class Unit extends EventEmitter {
 
     if (this.movable)
       this.contextManager.on('leaveAttackArea', (unit1, unit2) => {
-        if (this.id === unit1.id) {
-          if (this.attackableTargetIds.includes(unit2.id)) {
-            this.attackableTargetIds.splice(this.attackableTargetIds.indexOf(unit2.id), 1)
-          }
+        if (this.id === unit1.id
+            && this.attackableTargetIds.includes(unit2.id)) {
+          this.attackableTargetIds.splice(this.attackableTargetIds.indexOf(unit2.id), 1)
+
         }
       })
   }
@@ -201,32 +209,43 @@ export class Unit extends EventEmitter {
 
     this.withAttackCoolTime(() => {
 
+      const attackableTargetIds = this.sortAttackTargetByDistance()
+
       const attackTarget = this.attackTargetId
           ? this.contextManager.findUnit(this.attackTargetId)
-          : this.contextManager.findUnit(this.sortAttackTargetByDistance()[0])
+          : this.contextManager.findUnit(attackableTargetIds[0])
 
-      if (attackTarget && !attackTarget.attackable) {
-        const targetBound = attackTarget.sprite.getBounds()
-        const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
-        const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+      const index = attackableTargetIds.findIndex((id) => id === attackTarget.id)
+      const deleted = attackableTargetIds.splice(index, 1)[0]
 
-        const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
-        this.traceAttackTarget(offsetX, offsetY, distance)
-
-        if (distance <= 150) {
-          const bullet = Bullet.of(this.contextManager, this, attackTarget).render()
-
-          setTimeout(() => bullet.remove(), 600)
-        }
+      if (deleted || attackTarget) {
+        attackableTargetIds.unshift(deleted || attackTarget.id)
+        const ids = attackableTargetIds.slice(0, this.attackTargetLength)
+        ids.forEach((id) => {
+          if (!attackTarget.attackable) {
+            const target = this.contextManager.findUnit(id)
+            if (this.traceAttackTarget(attackTarget) <= 150) {
+              const bullet = Bullet.of(this.contextManager, this, target).render()
+              setTimeout(() => bullet.remove(), 300)
+            }
+          }
+        })
       }
     })
   }
 
-  traceAttackTarget(offsetX: number,
-                    offsetY: number,
-                    distance: number) {
+  traceAttackTarget(attackTarget?: Unit) {
+    if (!this.traceTarget && !attackTarget) return 0
     this.movingAnimation?.pause()
     this.attackAnimation?.pause()
+
+    const targetBound = attackTarget
+        ? attackTarget.sprite.getBounds()
+        : this.traceTarget!.sprite.getBounds()
+
+    const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
+    const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+    const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
 
     if (parseInt(String(distance)) > 150)
       this.attackAnimation = gsap.to(this.container, {
@@ -242,6 +261,8 @@ export class Unit extends EventEmitter {
       duration: .1,
       ease: 'linear'
     })
+
+    return distance
   }
 
   sortAttackTargetByDistance() {

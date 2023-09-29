@@ -9,7 +9,7 @@ export class Bullet {
 
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               private readonly attackingUnit: Unit,
-              private readonly attackedUnit: Unit,) {
+              private readonly attackedUnit: Unit) {
     const bullet = new Graphics()
     const attackingUnitBound = attackingUnit.sprite.getBounds()
     bullet.beginFill(0xFF0000)
