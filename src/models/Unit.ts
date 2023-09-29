@@ -4,6 +4,7 @@ import type {ContextManager} from "@/models/ContextManager"
 import type {UnwrapNestedRefs} from "vue"
 import {calculateDistance, generateUniqueId} from "@/utils/util"
 import {gsap} from "gsap"
+import {Bullet} from "@/models/Bullet"
 
 export type UnitOption = {
   x?: number
@@ -68,30 +69,6 @@ export class Unit extends EventEmitter {
     })
 
     this.container.addChild(sprite)
-
-    this.contextManager.on('attackReady', (units: Unit[]) => {
-      if (!this.attackable) return
-      if (units.map((unit) => unit.id).includes(this.id)) {
-        this.attackArea.alpha = .1
-      }
-    })
-
-
-    if (this.movable)
-      this.contextManager.on('attackStart', (attackingUnitIds: string[],
-                                             attackedUnitIds: string[]) => {
-        if (!this.attackable) return
-
-        if (attackingUnitIds.includes(this.id)) {
-          this.attackArea.alpha = 0
-
-          this.movingAnimation?.pause()
-          this.attackAnimation?.pause()
-          this.attackTargetId = attackedUnitIds[0]
-
-          this.attack()
-        }
-      })
 
     this.contextManager.on('selectUnits', (units: Unit[]) => {
       if (units.map((unit) => unit.id).includes(this.id)) {
@@ -164,6 +141,30 @@ export class Unit extends EventEmitter {
         })
       })
 
+    this.contextManager.on('attackReady', (units: Unit[]) => {
+      if (!this.attackable) return
+      if (units.map((unit) => unit.id).includes(this.id)) {
+        this.attackArea.alpha = .1
+      }
+    })
+
+
+    if (this.movable)
+      this.contextManager.on('attackStart', (attackingUnitIds: string[],
+                                             attackedUnitIds: string[]) => {
+        if (!this.attackable) return
+
+        if (attackingUnitIds.includes(this.id)) {
+          this.attackArea.alpha = 0
+
+          this.movingAnimation?.pause()
+          this.attackAnimation?.pause()
+          this.attackTargetId = attackedUnitIds[0]
+
+          this.attack()
+        }
+      })
+
     if (this.attackable)
       this.contextManager.on('collideAttackArea', (unit1: Unit, unit2: Unit) => {
         if (this.id === unit1.id) {
@@ -205,30 +206,35 @@ export class Unit extends EventEmitter {
           : this.contextManager.findUnit(this.sortAttackTargetByDistance()[0])
 
       if (attackTarget && !attackTarget.attackable) {
-        //this.attackTargetId = attackTarget.id
-        this.traceAttackTarget(attackTarget)
+        const targetBound = attackTarget.sprite.getBounds()
+        const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
+        const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+
+        const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+        this.traceAttackTarget(offsetX, offsetY, distance)
+
+        if (distance <= 150) {
+          const bullet = Bullet.of(this.contextManager, this, attackTarget).render()
+
+          setTimeout(() => bullet.remove(), 600)
+        }
       }
     })
   }
 
-  traceAttackTarget(attackTarget: Unit) {
+  traceAttackTarget(offsetX: number,
+                    offsetY: number,
+                    distance: number) {
     this.movingAnimation?.pause()
     this.attackAnimation?.pause()
 
-    const targetBound = attackTarget.sprite.getBounds()
-    const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
-    const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
-
-    const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
-
-    if (parseInt(String(distance)) >= 150)
+    if (parseInt(String(distance)) > 150)
       this.attackAnimation = gsap.to(this.container, {
         x: offsetX,
         y: offsetY,
         duration: distance / 250,
         ease: 'linear',
       })
-
     const angleDegrees = Math.atan2(offsetY - this.container.y, offsetX - this.container.x) * (180 / Math.PI) + 90
 
     gsap.to(this.container, {

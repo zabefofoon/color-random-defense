@@ -122,6 +122,10 @@ export class ContextManager extends EventEmitter {
     return this.units.find((unit) => unit.id === unitId)!
   }
 
+  updateBullet() {
+    this.emit('updateBullet')
+  }
+
   static of(app: Application) {
     return new ContextManager(app)
   }

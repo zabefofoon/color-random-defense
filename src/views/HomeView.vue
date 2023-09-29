@@ -89,7 +89,7 @@ onMounted(() => {
     contextManager.detectCollideWall()
     contextManager.detectCollideCircle()
     contextManager.detectCollideAttackArea()
-
+    contextManager.updateBullet()
     contextManager.units.forEach((unit) => unit.attack())
 
     if (enemy?.container) {
