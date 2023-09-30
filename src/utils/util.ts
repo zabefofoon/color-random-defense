@@ -20,10 +20,11 @@ export const calculateDistance = (x1: number,
 
 export const checkRectIntersectRectCoords = ({x1, y1, x2, y2}: RectCoords,
                                              rect: Sprite | UnwrapRef<Unit["sprite"]>,) => {
-  const x2Left = rect.getBounds().x
-  const x2Right = x2Left + rect.getBounds().width
-  const y2Top = rect.getBounds().y
-  const y2Bottom = y2Top + rect.getBounds().height
+  const rectBound = rect.getBounds()
+  const x2Left = rectBound.x
+  const x2Right = x2Left + (rectBound.width * 2)
+  const y2Top = rectBound.y
+  const y2Bottom = y2Top + (rectBound.height * 2)
 
   // 첫 번째 사각형의 좌측 상단 점
   const x1Left = Math.min(x1, x2)

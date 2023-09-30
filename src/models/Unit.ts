@@ -1,4 +1,4 @@
-import {Container, DisplayObject, Graphics, Sprite, Texture} from "pixi.js"
+import {Container, DisplayObject, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js"
 import {EventEmitter} from "events"
 import type {ContextManager} from "@/models/ContextManager"
 import type {UnwrapNestedRefs} from "vue"
@@ -38,12 +38,27 @@ export class Unit extends EventEmitter {
 
   traceTarget?: Unit
 
+  state = ''
+
   healthPoint = 50
   manaPoint = 50
 
   constructor(private readonly contextManager: UnwrapNestedRefs<ContextManager>,
               option?: UnitOption) {
     super()
+    const textStyle = new TextStyle({
+      fontSize: 20,
+      align: 'center'
+    })
+    const text = new Text(this.id.slice(0,3), textStyle)
+    text.x = -text.width / 2
+    this.container.addChild(text)
+
+    const hp = new Text(this.healthPoint, textStyle)
+    text.x = -text.width / 2
+    text.y = -20
+    this.container.addChild(hp)
+
     this.attackable = option?.attackable || false
     this.movable = option?.movable || false
 
@@ -73,6 +88,10 @@ export class Unit extends EventEmitter {
 
     sprite.on('mouseleave', () => {
       this.container.removeChild(this.preselectedIndicator)
+    })
+
+    this.contextManager.on('updateBullet', () => {
+      hp.text = this.healthPoint.toFixed(1)
     })
 
     this.container.addChild(sprite)
@@ -129,7 +148,7 @@ export class Unit extends EventEmitter {
             this.movingAnimation?.pause()
             this.attackAnimation?.pause()
 
-            const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+            const distance = parseInt(String(calculateDistance(offsetX, offsetY, this.container.x, this.container.y)))
 
             this.movingAnimation = gsap.to(this.container, {
               x: offsetX,
@@ -137,6 +156,8 @@ export class Unit extends EventEmitter {
               duration: distance / 250,
               ease: 'linear',
             })
+            this.state = 'moving'
+            setTimeout(() => this.state = 'moveend', (distance / 250) * 1000)
 
             const angleDegrees = Math.atan2(offsetY - this.container.y, offsetX - this.container.x) * (180 / Math.PI) + 90
 
@@ -175,21 +196,24 @@ export class Unit extends EventEmitter {
 
     if (this.attackable)
       this.contextManager.on('collideAttackArea', (unit1: Unit, unit2: Unit) => {
-        if (this.id === unit1.id) {
-          if (unit2.id === this.attackTargetId)
-            this.attackAnimation?.pause()
-          else if (!this.attackableTargetIds.includes(unit2.id)
-              && !unit2.attackable) {
-            this.attackableTargetIds?.push(unit2.id)
-          } else if (!this.attackTargetId) {
-            const targetBound = unit2.sprite.getBounds()
-            const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
-            const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+        if (this.id !== unit1.id) return
 
-            const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
-            if (distance <= 150) this.attackAnimation?.pause()
-          }
+        if (!this.attackableTargetIds.includes(unit2.id)
+            && !unit2.attackable)
+          this.attackableTargetIds?.push(unit2.id)
 
+        const attackTarget = this.contextManager.findUnit(this.attackTargetId || '')
+        const targetBound = attackTarget
+        ? attackTarget.sprite.getBounds()
+        : unit2.sprite.getBounds()
+
+        const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
+        const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
+
+        const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+        if (distance <= 150) {
+          if (this.state !== 'moving')
+          this.attackAnimation?.pause()
           this.attack()
         }
       })
@@ -208,7 +232,7 @@ export class Unit extends EventEmitter {
     if (!this.attackable) return
 
     this.withAttackCoolTime(() => {
-
+      if (this.state === 'moving') return
       const attackableTargetIds = this.sortAttackTargetByDistance()
 
       const attackTarget = this.attackTargetId
@@ -220,18 +244,20 @@ export class Unit extends EventEmitter {
 
       if (deleted || attackTarget) {
         attackableTargetIds.unshift(deleted || attackTarget.id)
-        const ids = attackableTargetIds.slice(0, this.attackTargetLength)
-        ids.forEach((id) => {
-          if (!attackTarget.attackable) {
-            const target = this.contextManager.findUnit(id)
-            if (this.traceAttackTarget(attackTarget) <= 150) {
-              const bullet = Bullet.of(this.contextManager, this, target).render()
-              setTimeout(() => bullet.remove(), 300)
-            }
-          }
-        })
+
+        attackableTargetIds
+            .slice(0, this.attackTargetLength)
+            .forEach((id) => {
+              if (!attackTarget.attackable
+                  && this.traceAttackTarget(attackTarget) <= 150)
+                Bullet.of(this.contextManager, this, this.contextManager.findUnit(id)).render()
+            })
       }
     })
+  }
+
+  attacked(damage: number) {
+    this.healthPoint = this.healthPoint - damage
   }
 
   traceAttackTarget(attackTarget?: Unit) {
@@ -245,9 +271,9 @@ export class Unit extends EventEmitter {
 
     const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
     const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
-    const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
+    const distance = parseInt(String(calculateDistance(offsetX, offsetY, this.container.x, this.container.y)))
 
-    if (parseInt(String(distance)) > 150)
+    if (distance > 150)
       this.attackAnimation = gsap.to(this.container, {
         x: offsetX,
         y: offsetY,

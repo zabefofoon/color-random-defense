@@ -66,10 +66,9 @@ export class SelectArea {
       if (!this.areaCoords) return
 
       const intersected = this.contextManager.units
-          .filter((unit): unit is Unit => checkRectIntersectRectCoords(
-              <RectCoords>this.areaCoords,
-              <Sprite>unit.sprite))
-
+          .filter((unit): unit is Unit => {
+            return checkRectIntersectRectCoords(this.areaCoords!, unit.sprite)
+          })
       this.contextManager.selectUnits(intersected)
 
       this.app.stage.removeChild(this.selectAreaRect)

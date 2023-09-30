@@ -51,18 +51,25 @@ onMounted(() => {
   })
 
 
-  contextManager.createUnit({
+  /*contextManager.createUnit({
     x: app.renderer.width / 2 - 200,
     y: app.renderer.height / 2 - 200,
     texture: ring,
     movable: true,
     attackable: true
-  })
+  })*/
 
 
   const enemy = contextManager.createUnit({
-    x: app.renderer.width / 2 + 200,
-    y: app.renderer.height / 2 + 200,
+    x: app.renderer.width / 2 + 160,
+    y: app.renderer.height / 2 + 100,
+    texture: ring,
+    movable: false
+  })
+
+  contextManager.createUnit({
+    x: app.renderer.width / 2 + 139.5,
+    y: app.renderer.height / 2 + 50,
     texture: ring,
     movable: false
   })
@@ -92,14 +99,14 @@ onMounted(() => {
     contextManager.updateBullet()
     contextManager.units.forEach((unit) => unit.attack())
 
-    if (enemy?.container) {
+    /*if (enemy?.container) {
       if (enemy.container.x >= 1200)
         direct = 'left'
       if (enemy.container.x <= 0)
         direct = 'right'
 
       enemy.container.x = enemy.container.x + (direct === 'right' ? 2 : -2)
-    }
+    }*/
   })
 
   window.addEventListener('resize', () => {
