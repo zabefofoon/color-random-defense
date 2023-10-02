@@ -132,10 +132,12 @@ export class Unit extends EventEmitter {
 
     this.contextManager.on('collideUnits', (unit1, unit2) => {
       if (this.movable && this.id === unit1.id) {
-        const thisCenterX = this.container.getBounds().x + this.container.getBounds().width / 2
-        const anotherCenterX = unit2.container.getBounds().x + unit2.container.getBounds().width / 2
-        const thisCenterY = this.container.getBounds().y + this.container.getBounds().height / 2
-        const anotherCenterY = unit2.container.getBounds().y + unit2.container.getBounds().height / 2
+        const containerBound = this.container.getBounds()
+        const unit2Bound = unit2.container.getBounds()
+        const thisCenterX = containerBound.x + containerBound.width / 2
+        const anotherCenterX = unit2Bound.x + unit2Bound.width / 2
+        const thisCenterY = containerBound.y + containerBound.height / 2
+        const anotherCenterY = unit2Bound.y + unit2Bound.height / 2
 
         this.container.x += thisCenterX >= anotherCenterX ? 1 : -1
         this.container.y += thisCenterY >= anotherCenterY ? 1 : -1

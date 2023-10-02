@@ -61,15 +61,21 @@ export const checkCollisionUnitWithWall = (unit: Unit, wall: Wall) => {
 }
 
 export const checkCollisionUnitWithUnit = (unitA: Unit, unitB: Unit) => {
-  const dx = (parseInt(`${unitA.sprite.getBounds().x}`) + parseInt(`${unitA.sprite.getBounds().x}`) + parseInt(`${unitA.sprite.getBounds().width}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().width}`)) / 2
-  const dy = (parseInt(`${unitA.sprite.getBounds().y}`) + parseInt(`${unitA.sprite.getBounds().y}`) + parseInt(`${unitA.sprite.getBounds().height}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().height}`)) / 2
+  const unitABound = unitA.sprite.getBounds()
+  const unitBBound = unitB.sprite.getBounds()
+
+  const dx = (parseInt(`${unitABound.x}`) + parseInt(`${unitABound.x}`) + parseInt(`${unitABound.width}`)) / 2 - (parseInt(`${unitBBound.x}`) + parseInt(`${unitBBound.x}`) + parseInt(`${unitBBound.width}`)) / 2
+  const dy = (parseInt(`${unitABound.y}`) + parseInt(`${unitABound.y}`) + parseInt(`${unitABound.height}`)) / 2 - (parseInt(`${unitBBound.y}`) + parseInt(`${unitBBound.y}`) + parseInt(`${unitBBound.height}`)) / 2
   const distance = Math.sqrt(dx * dx + dy * dy)
-  return distance <= parseInt(`${unitA.sprite.getBounds().width}`) / 2 + parseInt(`${unitB.sprite.getBounds().width}`) / 2
+  return distance <= parseInt(`${unitABound.width}`) / 4 + parseInt(`${unitBBound.width}`) / 4
 }
 
 export const checkCollisionAttackAreaWithUnit = (unitA: Unit, unitB: Unit) => {
-  const dx = (parseInt(`${unitA.attackArea.getBounds().x}`) + parseInt(`${unitA.attackArea.getBounds().x}`) + parseInt(`${unitA.attackArea.getBounds().width}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().width}`)) / 2
-  const dy = (parseInt(`${unitA.attackArea.getBounds().y}`) + parseInt(`${unitA.attackArea.getBounds().y}`) + parseInt(`${unitA.attackArea.getBounds().height}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().height}`)) / 2
+  const unitABound = unitA.attackArea.getBounds()
+  const unitBBound = unitB.sprite.getBounds()
+
+  const dx = (parseInt(`${unitABound.x}`) + parseInt(`${unitABound.x}`) + parseInt(`${unitABound.width}`)) / 2 - (parseInt(`${unitBBound.x}`) + parseInt(`${unitBBound.x}`) + parseInt(`${unitBBound.width}`)) / 2
+  const dy = (parseInt(`${unitABound.y}`) + parseInt(`${unitABound.y}`) + parseInt(`${unitABound.height}`)) / 2 - (parseInt(`${unitBBound.y}`) + parseInt(`${unitBBound.y}`) + parseInt(`${unitBBound.height}`)) / 2
   const distance = Math.sqrt(dx * dx + dy * dy)
 
   return distance <= 150
