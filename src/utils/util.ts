@@ -71,5 +71,6 @@ export const checkCollisionAttackAreaWithUnit = (unitA: Unit, unitB: Unit) => {
   const dx = (parseInt(`${unitA.attackArea.getBounds().x}`) + parseInt(`${unitA.attackArea.getBounds().x}`) + parseInt(`${unitA.attackArea.getBounds().width}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().x}`) + parseInt(`${unitB.sprite.getBounds().width}`)) / 2
   const dy = (parseInt(`${unitA.attackArea.getBounds().y}`) + parseInt(`${unitA.attackArea.getBounds().y}`) + parseInt(`${unitA.attackArea.getBounds().height}`)) / 2 - (parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().y}`) + parseInt(`${unitB.sprite.getBounds().height}`)) / 2
   const distance = Math.sqrt(dx * dx + dy * dy)
-  return distance <= parseInt(`${unitA.attackArea.getBounds().width}`) / 2 + parseInt(`${unitB.sprite.getBounds().width}`) / 2
+
+  return distance <= 150
 }

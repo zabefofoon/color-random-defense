@@ -65,10 +65,9 @@ export class ContextManager extends EventEmitter {
     this.units.forEach((unit1) => {
       this.units.forEach((unit2) => {
         if (unit1 !== unit2)
-          if (checkCollisionAttackAreaWithUnit(unit1, unit2)) {
-            this.emit('collideAttackArea', unit1, unit2)
-          } else
-            this.emit('leaveAttackArea', unit1, unit2)
+          checkCollisionAttackAreaWithUnit(unit1, unit2)
+              ? this.emit('collideAttackArea', unit1, unit2)
+              : this.emit('leaveAttackArea', unit1, unit2)
       })
     })
   }
@@ -109,7 +108,6 @@ export class ContextManager extends EventEmitter {
     const attackingUnitIds = this.selectedUnits.map((unit) => unit.id)
     this.emit('mouseup', event)
     const attackedUnitIds = this.selectedUnits.map((unit) => unit.id)
-
     if (this.isAttackReady)
       this.attackStart(attackingUnitIds, attackedUnitIds)
   }

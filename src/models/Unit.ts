@@ -50,7 +50,7 @@ export class Unit extends EventEmitter {
       fontSize: 20,
       align: 'center'
     })
-    const text = new Text(this.id.slice(0,3), textStyle)
+    const text = new Text(this.id.slice(0, 3), textStyle)
     text.x = -text.width / 2
     this.container.addChild(text)
 
@@ -91,7 +91,10 @@ export class Unit extends EventEmitter {
     })
 
     this.contextManager.on('updateBullet', () => {
-      hp.text = this.healthPoint.toFixed(1)
+
+      hp.text = this.attackable
+          ? this.attackCoolTime
+          : this.healthPoint.toFixed(1)
     })
 
     this.container.addChild(sprite)
@@ -147,7 +150,6 @@ export class Unit extends EventEmitter {
             this.traceTarget = undefined
             this.movingAnimation?.pause()
             this.attackAnimation?.pause()
-
             const distance = parseInt(String(calculateDistance(offsetX, offsetY, this.container.x, this.container.y)))
 
             this.movingAnimation = gsap.to(this.container, {
@@ -182,7 +184,6 @@ export class Unit extends EventEmitter {
       this.contextManager.on('attackStart', (attackingUnitIds: string[],
                                              attackedUnitIds: string[]) => {
         if (!this.attackable) return
-
         if (attackingUnitIds.includes(this.id)) {
           this.attackArea.alpha = 0
 
@@ -190,7 +191,6 @@ export class Unit extends EventEmitter {
           this.attackAnimation?.pause()
           this.attackTargetId = attackedUnitIds[0]
           this.traceTarget = this.contextManager.findUnit(attackedUnitIds[0])
-          this.attack()
         }
       })
 
@@ -198,62 +198,51 @@ export class Unit extends EventEmitter {
       this.contextManager.on('collideAttackArea', (unit1: Unit, unit2: Unit) => {
         if (this.id !== unit1.id) return
 
-        if (!this.attackableTargetIds.includes(unit2.id)
-            && !unit2.attackable)
+        if (!this.attackableTargetIds.includes(unit2.id) &&
+            !unit2.attackable)
           this.attackableTargetIds?.push(unit2.id)
 
-        const attackTarget = this.contextManager.findUnit(this.attackTargetId || '')
-        const targetBound = attackTarget
-        ? attackTarget.sprite.getBounds()
-        : unit2.sprite.getBounds()
-
-        const offsetX = (targetBound.x + targetBound.x + targetBound.width) / 2
-        const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
-
-        const distance = calculateDistance(offsetX, offsetY, this.container.x, this.container.y)
-        if (distance <= 150) {
-          if (this.state !== 'moving')
-          this.attackAnimation?.pause()
-          this.attack()
+        if (unit2.id === this.traceTarget?.id) {
+          this.state = 'traceend'
         }
       })
 
     if (this.movable)
       this.contextManager.on('leaveAttackArea', (unit1, unit2) => {
-        if (this.id === unit1.id
-            && this.attackableTargetIds.includes(unit2.id)) {
+        if (this.id === unit1.id &&
+            this.attackableTargetIds.includes(unit2.id)) {
           this.attackableTargetIds.splice(this.attackableTargetIds.indexOf(unit2.id), 1)
-
         }
       })
   }
 
   attack() {
-    if (!this.attackable) return
-
-    this.withAttackCoolTime(() => {
-      if (this.state === 'moving') return
-      const attackableTargetIds = this.sortAttackTargetByDistance()
-
-      const attackTarget = this.attackTargetId
-          ? this.contextManager.findUnit(this.attackTargetId)
-          : this.contextManager.findUnit(attackableTargetIds[0])
-
-      const index = attackableTargetIds.findIndex((id) => id === attackTarget.id)
-      const deleted = attackableTargetIds.splice(index, 1)[0]
-
-      if (deleted || attackTarget) {
-        attackableTargetIds.unshift(deleted || attackTarget.id)
-
-        attackableTargetIds
-            .slice(0, this.attackTargetLength)
-            .forEach((id) => {
-              if (!attackTarget.attackable
-                  && this.traceAttackTarget(attackTarget) <= 150)
+    if (this.state === 'moving') return
+    if (this.traceTarget) {
+      !this.attackableTargetIds.includes(this.traceTarget.id)
+          ? this.traceAttackTarget(this.traceTarget)
+          : this.withAttackCoolTime(() => {
+            this.sortAttackTargetByDistance()
+                .slice(0, this.attackTargetLength)
+                .forEach((id) => {
+                  Bullet.of(this.contextManager, this, this.contextManager.findUnit(id)).render()
+                })
+          })
+    } else {
+      if (this.attackableTargetIds.length) {
+        const attackableTargetIds = this.sortAttackTargetByDistance()
+        const attackTarget = this.contextManager.findUnit(attackableTargetIds[0])
+        if (!attackTarget) return
+        this.traceAttackTarget(attackTarget)
+        this.withAttackCoolTime(() => {
+          attackableTargetIds
+              .slice(0, this.attackTargetLength)
+              .forEach((id) => {
                 Bullet.of(this.contextManager, this, this.contextManager.findUnit(id)).render()
-            })
+              })
+        })
       }
-    })
+    }
   }
 
   attacked(damage: number) {
@@ -261,10 +250,6 @@ export class Unit extends EventEmitter {
   }
 
   traceAttackTarget(attackTarget?: Unit) {
-    if (!this.traceTarget && !attackTarget) return 0
-    this.movingAnimation?.pause()
-    this.attackAnimation?.pause()
-
     const targetBound = attackTarget
         ? attackTarget.sprite.getBounds()
         : this.traceTarget!.sprite.getBounds()
@@ -273,13 +258,18 @@ export class Unit extends EventEmitter {
     const offsetY = (targetBound.y + targetBound.y + targetBound.height) / 2
     const distance = parseInt(String(calculateDistance(offsetX, offsetY, this.container.x, this.container.y)))
 
-    if (distance > 150)
+    if (distance > 150 &&
+        this.state !== 'tracing' &&
+        !this.attackCoolTime) {
       this.attackAnimation = gsap.to(this.container, {
         x: offsetX,
         y: offsetY,
         duration: distance / 250,
         ease: 'linear',
       })
+      this.state = 'tracing'
+    }
+
     const angleDegrees = Math.atan2(offsetY - this.container.y, offsetX - this.container.x) * (180 / Math.PI) + 90
 
     gsap.to(this.container, {
@@ -287,16 +277,13 @@ export class Unit extends EventEmitter {
       duration: .1,
       ease: 'linear'
     })
-
-    return distance
   }
 
   sortAttackTargetByDistance() {
-    return this.attackableTargetIds
+    const ids = this.attackableTargetIds
         .slice()
         .sort((a, b) => {
           const thisBound = this.sprite.getBounds()
-
 
           const foundA = this.contextManager.findUnit(a)
           const foundBoundA = foundA.sprite.getBounds()
@@ -309,17 +296,28 @@ export class Unit extends EventEmitter {
 
           return distanceA - distanceB
         })
+
+
+    const index = ids.findIndex((id) => id === this.traceTarget?.id)
+    if (index !== -1) {
+      const deleted = ids.splice(index, 1)[0]
+      ids.unshift(deleted)
+    }
+
+
+    return ids
   }
 
   withAttackCoolTime(cb: () => void) {
-    if (!this.attackCoolTime) {
-      cb()
-      this.attackCoolTime = true
+    if (this.attackCoolTime) return
+    this.attackAnimation?.pause()
+    cb()
+    this.attackCoolTime = true
+
+    this.attackTimer = setTimeout(() => {
+      this.attackCoolTime = false
       clearTimeout(this.attackTimer)
-      this.attackTimer = setTimeout(() => {
-        this.attackCoolTime = false
-      }, 1000)
-    }
+    }, 1000)
   }
 
   get sprite() {

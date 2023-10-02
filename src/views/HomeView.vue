@@ -50,6 +50,14 @@ onMounted(() => {
     attackable: true
   })
 
+  contextManager.createUnit({
+    x: app.renderer.width / 2 + 100,
+    y: app.renderer.height / 2,
+    texture: ring,
+    movable: true,
+    attackable: true
+  })
+
 
   /*contextManager.createUnit({
     x: app.renderer.width / 2 - 200,
@@ -97,16 +105,18 @@ onMounted(() => {
     contextManager.detectCollideCircle()
     contextManager.detectCollideAttackArea()
     contextManager.updateBullet()
-    contextManager.units.forEach((unit) => unit.attack())
+    contextManager.units.forEach((unit) => {
+      if (unit.attackable) unit.attack()
+    })
 
-    /*if (enemy?.container) {
+    if (enemy?.container) {
       if (enemy.container.x >= 1200)
         direct = 'left'
       if (enemy.container.x <= 0)
         direct = 'right'
 
       enemy.container.x = enemy.container.x + (direct === 'right' ? 2 : -2)
-    }*/
+    }
   })
 
   window.addEventListener('resize', () => {
