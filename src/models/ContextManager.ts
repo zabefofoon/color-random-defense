@@ -5,6 +5,7 @@ import {Application, Container} from "pixi.js"
 import {checkCollisionAttackAreaWithUnit, checkCollisionUnitWithUnit, checkCollisionUnitWithWall} from "@/utils/util"
 import {SelectArea} from "@/models/SelectArea"
 import {Wall} from "@/models/Wall"
+import {Map} from "@/models/Map"
 
 export class ContextManager extends EventEmitter {
   selectedUnits: Unit[] = []
@@ -19,16 +20,32 @@ export class ContextManager extends EventEmitter {
 
   isAttackReady = false
 
+  map: Map
+
   constructor(public readonly app: Application) {
     super()
     this.app = app
     this.app.stage.addChild(this.container)
+
+    this.map = Map.of(this, this.app)
     this.selectArea = SelectArea.of(this, this.app)
   }
 
   emitKeydown({code}: KeyboardEvent) {
     if (code === 'KeyA') {
       this.attackReady()
+    }
+    if (code === 'ArrowLeft') {
+      // this.map.container.x += 10
+    }
+    if (code === 'ArrowRight') {
+      // this.map.container.x -= 10
+    }
+    if (code === 'ArrowUp') {
+      // this.map.container.y += 10
+    }
+    if (code === 'ArrowDown') {
+      // this.map.container.y -= 10
     }
   }
 

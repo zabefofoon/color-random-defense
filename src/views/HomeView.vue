@@ -1,14 +1,20 @@
 <template>
-  <main ref="main"
-        class="border-0 outline-0"
-        :class="{'cursor-pointer': isAttack}"
-        tabindex="0"
-        @mousemove="contextManager.emitMousemove"
-        @mousedown="contextManager.emitMousedown"
-        @mouseup="contextManager.emitMouseup"
-        @keydown="contextManager.emitKeydown"
-        @contextmenu.prevent="contextManager.move">
-  </main>
+  <div class="relative">
+    <main ref="main"
+          class="border-0 outline-0"
+          :class="{'cursor-pointer': isAttack}"
+          style="width: 3000px; height: 3000px;"
+          tabindex="0"
+          @mousemove="contextManager.emitMousemove"
+          @mousedown="contextManager.emitMousedown"
+          @mouseup="contextManager.emitMouseup"
+          @keydown="contextManager.emitKeydown"
+          @contextmenu.prevent="contextManager.move">
+    </main>
+    <Map :context-manager="contextManager"
+         :units-pos="unitsPos"/>
+    <MapBar/>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -17,13 +23,14 @@ import {onMounted, ref} from "vue"
 import {ContextManager} from "@/models/ContextManager"
 import box from "@/assets/box.png"
 import ring from "@/assets/ring.png"
+import MapBar from "@/components/MapBar.vue"
+import Map from "@/components/Map.vue"
 
 const main = ref<HTMLDivElement>()
 
 const app = new Application({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  resizeTo: window,
+  width: 3000,
+  height: 3000,
   antialias: true,
   background: 'ffffff'
 })
@@ -35,6 +42,7 @@ const contextManager = ContextManager.of(app)
 const isAttack = ref(false)
 const checkAttack = (value: boolean) => isAttack.value = value
 
+const unitsPos = ref()
 
 onMounted(() => {
   const canvasEl = document.getElementsByTagName('canvas')[0]
@@ -50,42 +58,11 @@ onMounted(() => {
     attackable: true
   })
 
-  contextManager.createUnit({
-    x: app.renderer.width / 2 + 100,
-    y: app.renderer.height / 2,
-    texture: ring,
-    movable: true,
-    attackable: true
-  })
-
-
-  /*contextManager.createUnit({
-    x: app.renderer.width / 2 - 200,
-    y: app.renderer.height / 2 - 200,
-    texture: ring,
-    movable: true,
-    attackable: true
-  })*/
-
-
   const enemy = contextManager.createUnit({
     x: app.renderer.width / 2 + 160,
     y: app.renderer.height / 2 + 100,
     texture: ring,
     movable: false
-  })
-
-  contextManager.createUnit({
-    x: app.renderer.width / 2 + 139.5,
-    y: app.renderer.height / 2 + 50,
-    texture: ring,
-    movable: false
-  })
-
-  contextManager.createUnit({
-    x: (app.renderer.width / 2) + 100,
-    y: (app.renderer.height / 2) + 100,
-    texture: ring,
   })
 
   contextManager.createWall({
@@ -96,10 +73,6 @@ onMounted(() => {
     texture: box
   })
 
-
-  let direct = 'right'
-
-
   app.ticker.add(() => {
     contextManager.detectCollideWall()
     contextManager.detectCollideCircle()
@@ -109,27 +82,17 @@ onMounted(() => {
       if (unit.attackable) unit.attack()
     })
 
-    if (enemy?.container) {
-      if (enemy.container.x >= 1200)
-        direct = 'left'
-      if (enemy.container.x <= 0)
-        direct = 'right'
-
-      enemy.container.x = enemy.container.x + (direct === 'right' ? 2 : -2)
-    }
+    unitsPos.value = contextManager.units.map((unit) => {
+      const unitSpriteBound = unit.sprite.getBounds()
+      return {
+        x: unitSpriteBound.x,
+        y: unitSpriteBound.y
+      }
+    })
   })
 
-  window.addEventListener('resize', () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight)
-  })
-
-  contextManager.on('attackReady', () => {
-    checkAttack(true)
-  })
-
-  contextManager.on('attackStart', () => {
-    checkAttack(false)
-  })
+  contextManager.on('attackReady', () => checkAttack(true))
+  contextManager.on('attackStart', () => checkAttack(false))
 })
 </script>
 

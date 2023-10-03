@@ -93,7 +93,7 @@ export class Unit extends EventEmitter {
     this.contextManager.on('updateBullet', () => {
 
       hp.text = this.attackable
-          ? this.attackCoolTime
+          ? String(this.attackCoolTime)
           : this.healthPoint.toFixed(1)
     })
 
@@ -327,7 +327,7 @@ export class Unit extends EventEmitter {
   }
 
   render() {
-    if (this.container) this.contextManager.container.addChild(this.container)
+    if (this.container) this.contextManager.map.container.addChild(this.container)
     return this
   }
 

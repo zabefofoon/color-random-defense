@@ -1,0 +1,8 @@
+export type Direction = 'left'
+    | 'up'
+    | 'right'
+    | 'down'
+    | 'leftUp'
+    | 'rightUp'
+    | 'rightDown'
+    | 'leftDown'

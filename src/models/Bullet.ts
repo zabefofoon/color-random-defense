@@ -87,12 +87,12 @@ export class Bullet {
   }
 
   render() {
-    if (this.container) this.contextManager.container.addChild(this.container)
+    if (this.container) this.contextManager.map.container.addChild(this.container)
     return this
   }
 
   remove() {
-    this.contextManager.container.removeChild(this.container)
+    this.contextManager.map.container.removeChild(this.container)
   }
 
   static of(contextManager: UnwrapNestedRefs<ContextManager>,
