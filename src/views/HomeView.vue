@@ -3,7 +3,7 @@
     <main ref="main"
           class="border-0 outline-0"
           :class="{'cursor-pointer': isAttack}"
-          style="width: 3000px; height: 3000px;"
+          :style="{width: `${WIDTH}px`, height:`${HEIGHT}px`}"
           tabindex="0"
           @mousemove="contextManager.emitMousemove"
           @mousedown="contextManager.emitMousedown"
@@ -11,8 +11,11 @@
           @keydown="contextManager.emitKeydown"
           @contextmenu.prevent="contextManager.move">
     </main>
-    <Map :context-manager="contextManager"
-         :units-pos="unitsPos"/>
+    <MiniMap :context-manager="contextManager"
+             :units-pos="unitsPos"
+             :walls-pos="wallsPos"
+             :map-width="WIDTH"
+             :map-height="HEIGHT"/>
     <MapBar/>
   </div>
 </template>
@@ -21,21 +24,24 @@
 import {Application} from 'pixi.js'
 import {onMounted, ref} from "vue"
 import {ContextManager} from "@/models/ContextManager"
-import box from "@/assets/box.png"
 import ring from "@/assets/ring.png"
 import MapBar from "@/components/MapBar.vue"
-import Map from "@/components/Map.vue"
+import MiniMap from "@/components/MiniMap.vue"
+import {generateWalls} from "@/mixins/Walls"
 
 const main = ref<HTMLDivElement>()
 
+const WIDTH = 2500
+const HEIGHT = 2500
+
 const app = new Application({
-  width: 3000,
-  height: 3000,
+  width: WIDTH,
+  height: HEIGHT,
   antialias: true,
   background: 'ffffff'
 })
 
-// app.ticker.maxFPS = 60
+app.ticker.maxFPS = 30
 
 const contextManager = ContextManager.of(app)
 
@@ -43,6 +49,7 @@ const isAttack = ref(false)
 const checkAttack = (value: boolean) => isAttack.value = value
 
 const unitsPos = ref()
+const wallsPos = ref()
 
 onMounted(() => {
   const canvasEl = document.getElementsByTagName('canvas')[0]
@@ -51,29 +58,25 @@ onMounted(() => {
   main.value?.appendChild(app.view)
 
   contextManager.createUnit({
-    x: app.renderer.width / 2,
-    y: app.renderer.height / 2,
+    x: 1150,
+    y: 675,
     texture: ring,
     movable: true,
     attackable: true
   })
 
   const enemy = contextManager.createUnit({
-    x: app.renderer.width / 2 + 160,
-    y: app.renderer.height / 2 + 100,
+    x: 837.5,
+    y: 675,
     texture: ring,
     movable: false
   })
 
-  contextManager.createWall({
-    x: 300,
-    y: 300,
-    width: 50,
-    height: 50,
-    texture: box
-  })
+  generateWalls(contextManager)
 
-  app.ticker.add(() => {
+  wallsPos.value = contextManager.walls.map((wall) => wall.sprite.getBounds())
+
+  /*app.ticker.add(() => {
     contextManager.detectCollideWall()
     contextManager.detectCollideCircle()
     contextManager.detectCollideAttackArea()
@@ -89,7 +92,7 @@ onMounted(() => {
         y: unitSpriteBound.y
       }
     })
-  })
+  })*/
 
   contextManager.on('attackReady', () => checkAttack(true))
   contextManager.on('attackStart', () => checkAttack(false))

@@ -73,16 +73,16 @@ export class Unit extends EventEmitter {
     this.container.addChild(this.attackArea)
 
     const sprite = new Sprite(Texture.from(option?.texture || ''))
-    sprite.width = 50
-    sprite.height = 50
-    sprite.x = -25
-    sprite.y = -25
+    sprite.width = 40
+    sprite.height = 40
+    sprite.x = -sprite.width / 2
+    sprite.y = -sprite.height / 2
     sprite.eventMode = 'static'
 
 
     sprite.on('mouseover', () => {
       this.preselectedIndicator.lineStyle(2, 0xFF00FF, .3)
-      this.preselectedIndicator.drawCircle(0, 0, 25)
+      this.preselectedIndicator.drawCircle(0, 0, sprite.width / 2)
       this.container.addChild(this.preselectedIndicator)
     })
 
@@ -102,7 +102,7 @@ export class Unit extends EventEmitter {
     this.contextManager.on('selectUnits', (units: Unit[]) => {
       if (units.map((unit) => unit.id).includes(this.id)) {
         this.selectedIndicator.lineStyle(2, 0xFF00FF)
-        this.selectedIndicator.drawCircle(0, 0, 25)
+        this.selectedIndicator.drawCircle(0, 0, sprite.width / 2)
         this.container.addChild(this.selectedIndicator)
       } else {
         this.container.removeChild(this.selectedIndicator)

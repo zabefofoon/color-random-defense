@@ -11,13 +11,11 @@ export class Map {
               private readonly app: Application) {
 
 
-    this.container.width = 4000
-    this.container.height = 4000
-
-
-    this.sprite.width = 4000
-    this.sprite.height = 4000
-    this.sprite.alpha = .1
+    this.container.width = 2500
+    this.container.height = 2500
+    this.sprite.width = 2500
+    this.sprite.height = 2500
+    this.sprite.alpha = .05
 
     this.container.addChild(this.sprite)
     this.app.stage.addChild(this.container)

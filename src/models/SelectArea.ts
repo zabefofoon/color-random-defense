@@ -1,4 +1,3 @@
-import type {Sprite} from "pixi.js"
 import {Application, Graphics} from "pixi.js"
 import type {UnwrapNestedRefs} from "vue"
 import {ContextManager} from "@/models/ContextManager"
